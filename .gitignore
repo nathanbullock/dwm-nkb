@@ -1,0 +1,9 @@
+# Lines starting with '#' are considered comments.
+
+# ignore vim backup files.
+*~
+# ignore object files.
+*.o
+# ignore dwm executable.
+dwm
+
