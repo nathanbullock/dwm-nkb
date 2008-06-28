@@ -98,7 +98,8 @@ struct Client {
     Window      c_win;
     char        c_name[256];
     int         x, y, w, h;
-   
+    int         c_xunits, c_yunits;
+
     /* http://tronche.com/gui/x/icccm/sec-4.html#s-4.1.2.3 */
     int         c_basew, c_baseh;
     int         c_incw, c_inch;
@@ -789,6 +790,7 @@ isurgent(unsigned int monitor, unsigned int t)
 void
 drawbar(void)
 {
+    char text[512];
     int i, j, x;
     Client *c = NULL;
 
@@ -827,7 +829,8 @@ drawbar(void)
         if ((m->dc.w = m->dc.x - x) > bh) {
             m->dc.x = x;
             if (c) {
-                drawtext(m, c->c_name, m->dc.sel, False);
+                sprintf(text, "(%d,%d) %s", c->c_xunits, c->c_yunits, c->c_name);
+                drawtext(m, text, m->dc.sel, False);
                 drawsquare(m, False, c->c_isfloating, False, m->dc.sel);
             } else
                 drawtext(m, NULL, m->dc.norm, False);
@@ -1120,11 +1123,19 @@ resize(Client * c, int x, int y, int w, int h, Bool sizehints)
         /*
          * adjust for increment value 
          */
+        c->c_xunits = w / c->c_incw;
+        c->c_yunits = h / c->c_inch;
+        
+        w = c->c_xunits * c->c_incw;
+        h = c->c_yunits * c->c_inch;
+        /*
+        c->c_yunits = h / c->c_inch;
+
         if (c->c_incw)
             w -= w % c->c_incw;
         if (c->c_inch)
             h -= h % c->c_inch;
-
+*/
         /*
          * restore base dimensions 
          */
@@ -1548,9 +1559,9 @@ updatesizehints(Client *c)
     if (size.flags & PResizeInc) {
         c->c_incw = size.width_inc;
         c->c_inch = size.height_inc;
-    } else {
-        c->c_incw = c->c_inch = 0;
     }
+    c->c_inch = (c->c_inch > 1) ? c->c_inch : 1;
+    c->c_incw = (c->c_incw > 1) ? c->c_incw : 1;
 
     if (size.flags & PMaxSize) {
         c->c_maxw = size.max_width;
