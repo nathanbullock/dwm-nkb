@@ -1044,7 +1044,11 @@ fn_focusNext(const char *arg)
     else
         c = rootClient;
 
-    for (; c == rootClient; c = c->c_next[workspace]);
+    if (workspaces.w_numClients[workspace] > 0) {
+        for (; c == rootClient; c = c->c_next[workspace]);
+    } else {
+        c = NULL;
+    }
 
     focus(c);
     restack();
