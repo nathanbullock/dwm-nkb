@@ -121,6 +121,7 @@ struct Client {
 typedef struct Workspaces {
     int         w_numClients[10];
     Client      w_client;
+    int         w_vSplit[10];
 } Workspaces;
 
 Workspaces workspaces;
@@ -139,7 +140,6 @@ struct Monitor {
 
     /* these should probably belong to a workspace */
     Layout     *m_layout;
-    double      m_mwfact;
 };
 
 /*
@@ -170,7 +170,7 @@ void fn_nextLayout(const char *arg);
 //void fn_prevLayout(const char *arg);
 //void fn_toggleZoom(const char *arg);
 
-void fn_setmwfact(const char *arg);
+void fn_adjustVSplit(const char *arg);
 void fn_adjustMonitorWidth(const char *arg);
 void fn_adjustMonitorHeight(const char *arg);
 
@@ -628,7 +628,7 @@ layoutTile(void)
         /*
          * window geoms 
          */
-        mw = (n == 1) ? m->waw : m->m_mwfact * m->waw;
+        mw = (n == 1) ? m->waw : workspaces.w_vSplit[workspace];
         th = (n > 1) ? m->wah / (n - 1) : 0;
         if (n > 1 && th < bh)
             th = m->wah;
@@ -1267,27 +1267,26 @@ fn_adjustMonitorHeight(const char *arg)
 }
 
 void
-fn_setmwfact(const char *arg)
+fn_adjustVSplit(const char *arg)
 {
-    double delta;
-
     Monitor *m = &monitors[monitorat()];
-
-    /*
-     * arg handling, manipulate mwfact 
-     */
+    int vsplit = workspaces.w_vSplit[m->m_workspace];
+    int delta;
+    
     if (arg == NULL)
-        m->m_mwfact = MWFACT;
-    else if (sscanf(arg, "%lf", &delta) == 1) {
+        vsplit = VSPLIT;
+    else if (sscanf(arg, "%d", &delta) == 1) {
         if (arg[0] == '+' || arg[0] == '-')
-            m->m_mwfact += delta;
+            vsplit += delta;
         else
-            m->m_mwfact = delta;
-        if (m->m_mwfact < 0.1)
-            m->m_mwfact = 0.1;
-        else if (m->m_mwfact > 0.9)
-            m->m_mwfact = 0.9;
+            vsplit = delta;
+        if (vsplit < 30)
+            vsplit = 30;
+        else if (vsplit > m->m_width)
+            vsplit = m->m_width;
     }
+
+    workspaces.w_vSplit[m->m_workspace] = vsplit;
     arrange();
 }
 
@@ -2044,6 +2043,7 @@ setup(void)
         workspaces.w_numClients[i] = 0;
         workspaces.w_client.c_next[i] = rootClient;
         workspaces.w_client.c_prev[i] = rootClient;
+        workspaces.w_vSplit[i] = VSPLIT;
     }
 
     // init screens/monitors first
@@ -2096,7 +2096,6 @@ setup(void)
         /*
          * init layouts 
          */
-        m->m_mwfact = MWFACT;
         m->m_layout = &layouts[0];
         for (blw = k = 0; k < LENGTH(layouts); k++) {
             j = textw(m, layouts[k].symbol);

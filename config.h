@@ -16,7 +16,7 @@ const char tags[][MAXTAGLEN] = {
     "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
 /* layout(s) */
-#define MWFACT			0.5	/* master width factor [0.1 .. 0.9] */
+#define VSPLIT			400
 #define RESIZEHINTS		True	/* False - respect size hints in tiled resizals */
 #define SNAP			32	/* snap pixel */
 
@@ -57,18 +57,18 @@ Key KeysSecondary[] = {
     { Mod1Mask,     XK_3,   fn_viewWorkspace,           (char*)3 },
     { Mod1Mask,     XK_4,   fn_viewWorkspace,           (char*)4 },
     
-    { Mod1Mask,			XK_space,	fn_nextLayout,	NULL },
-    { Mod1Mask,			XK_b,		fn_toggleBar,	NULL },
-    { Mod1Mask,			XK_j,		fn_focusNext,	NULL },
-    { 0,			XK_Escape,	fn_primaryKeys,	NULL },
-    { Mod1Mask,			XK_h,		fn_setmwfact,	"-0.01" },
-    { Mod1Mask,			XK_l,		fn_setmwfact,	"+0.01" },
-    { Mod1Mask|ShiftMask,	XK_c,		fn_killWindow,	NULL },
-    { Mod1Mask|ShiftMask,	XK_q,		fn_killSession,	NULL },
-    { Mod1Mask,			XK_a,		fn_adjustMonitorWidth,	"-5" },
-    { Mod1Mask,			XK_f,		fn_adjustMonitorWidth,	"+5" },
-    { Mod1Mask,			XK_s,		fn_adjustMonitorHeight,	"-5" },
-    { Mod1Mask,			XK_d,		fn_adjustMonitorHeight,	"+5" },
+    { Mod1Mask,			XK_space,	fn_nextLayout,  NULL },
+    { Mod1Mask,			XK_b,		fn_toggleBar,   NULL },
+    { Mod1Mask,			XK_j,		fn_focusNext,   NULL },
+    { 0,			XK_Escape,	fn_primaryKeys, NULL },
+    { Mod1Mask,			XK_h,		fn_adjustVSplit, "-5" },
+    { Mod1Mask,			XK_l,		fn_adjustVSplit, "+5" },
+    { Mod1Mask|ShiftMask,	XK_c,		fn_killWindow,  NULL },
+    { Mod1Mask|ShiftMask,	XK_q,		fn_killSession, NULL },
+    { Mod1Mask,			XK_a,		fn_adjustMonitorWidth, "-5" },
+    { Mod1Mask,			XK_f,		fn_adjustMonitorWidth, "+5" },
+    { Mod1Mask,			XK_s,		fn_adjustMonitorHeight, "-5" },
+    { Mod1Mask,			XK_d,		fn_adjustMonitorHeight, "+5" },
 };
 
 
