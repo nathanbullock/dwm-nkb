@@ -163,17 +163,22 @@ void fn_exec(const char *arg);
 void fn_killWindow(const char *arg);
 void fn_killSession(const char *arg);
 
+void layoutTile(void);
+void layoutFullscreen(void);
+
 void fn_nextLayout(const char *arg);
 //void fn_prevLayout(const char *arg);
 //void fn_toggleZoom(const char *arg);
 
 void fn_setmwfact(const char *arg);
+void fn_adjustMonitorWidth(const char *arg);
+void fn_adjustMonitorHeight(const char *arg);
 
 void fn_toggleBar(const char *arg);
 
-void floating(void);            /* default floating layout */
-void tile(void);
-void fullscreen(void);
+
+
+
 
 
 
@@ -208,8 +213,6 @@ unsigned int blw = 0;
 unsigned int numlockmask = 0;
 Atom wmatom[WMLast], netatom[NetLast];
 Bool isxinerama = False;
-Bool domwfact = True;
-Bool dozoom = True;
 Bool readin;
 Bool running = True;
 Client *sel = NULL;
@@ -569,25 +572,10 @@ arrange(void)
  */
 
 void
-floating(void)
-{
-    int workspace = monitors[selmonitor].m_workspace;
-    Client *c = rootClient->c_next[workspace];
-
-    domwfact = dozoom = False;
-
-    for (; c != rootClient; c = c->c_next[workspace]) {
-        resize(c, c->x, c->y, c->w, c->h, True);
-    }
-}
-
-void
-fullscreen(void)
+layoutFullscreen(void)
 {
     unsigned int i, nx, ny, nw, nh;
     Client *c;
-
-    domwfact = dozoom = True;
 
     for (i = 0; i < mcount; i++) {
         Monitor *m = &monitors[i];
@@ -619,12 +607,10 @@ fullscreen(void)
 }
 
 void
-tile(void)
+layoutTile(void)
 {
     unsigned int i, j, n, nx, ny, nw, nh, mw, th;
     Client *c, *mc;
-
-    domwfact = dozoom = True;
 
     nx = ny = nw = 0;           /* gcc stupidity requires this */
 
@@ -1188,28 +1174,25 @@ restack(void)
     drawbar();
     if (!sel)
         return;
-    if (sel->c_isfloating
-        || (monitors[selmonitor].m_layout->arrange == floating))
+    if (sel->c_isfloating)
         XRaiseWindow(dpy, sel->c_win);
-    if (monitors[selmonitor].m_layout->arrange != floating) {
-        wc.stack_mode = Below;
-        wc.sibling = monitors[selmonitor].m_barwin;
-        if (!sel->c_isfloating) {
-            XConfigureWindow(dpy, sel->c_win, CWSibling | CWStackMode, &wc);
-            wc.sibling = sel->c_win;
-        }
-        for (i = 0; i < mcount; i++) {
-            int workspace = monitors[i].m_workspace;
-            c = rootClient->c_next[workspace];
-            for (; c != rootClient; c = c->c_next[workspace]) {
-                if (c->c_isfloating)
-                    continue;
-                if (c == sel)
-                    continue;
-                XConfigureWindow(dpy, c->c_win, CWSibling | CWStackMode,
-                                 &wc);
-                wc.sibling = c->c_win;
-            }
+    wc.stack_mode = Below;
+    wc.sibling = monitors[selmonitor].m_barwin;
+    if (!sel->c_isfloating) {
+        XConfigureWindow(dpy, sel->c_win, CWSibling | CWStackMode, &wc);
+        wc.sibling = sel->c_win;
+    }
+    for (i = 0; i < mcount; i++) {
+        int workspace = monitors[i].m_workspace;
+        c = rootClient->c_next[workspace];
+        for (; c != rootClient; c = c->c_next[workspace]) {
+            if (c->c_isfloating)
+                continue;
+            if (c == sel)
+                continue;
+            XConfigureWindow(dpy, c->c_win, CWSibling | CWStackMode,
+                             &wc);
+            wc.sibling = c->c_win;
         }
     }
     XSync(dpy, False);
@@ -1240,14 +1223,56 @@ fn_nextLayout(const char *arg)
 }
 
 void
+fn_adjustMonitorWidth(const char *arg)
+{
+    Monitor *m = &monitors[monitorat()];
+    int delta;
+
+    if (arg == NULL)
+        m->m_width = m->m_realWidth;
+    else if (sscanf(arg, "%d", &delta) == 1) {
+        if (arg[0] == '+' || arg[0] == '-')
+            m->m_width += delta;
+        else
+            m->m_width = delta;
+        if (m->m_width < 300)
+            m->m_width = 300;
+        else if (m->m_width > m->m_realWidth)
+            m->m_width = m->m_realWidth;
+    }
+    updatebarpos(m);
+    arrange();
+}
+
+void
+fn_adjustMonitorHeight(const char *arg)
+{
+    Monitor *m = &monitors[monitorat()];
+    int delta;
+
+    if (arg == NULL)
+        m->m_height = m->m_realHeight;
+    else if (sscanf(arg, "%d", &delta) == 1) {
+        if (arg[0] == '+' || arg[0] == '-')
+            m->m_height += delta;
+        else
+            m->m_height = delta;
+        if (m->m_height < 300)
+            m->m_height = 300;
+        else if (m->m_height > m->m_realHeight)
+            m->m_height = m->m_realHeight;
+    }
+    updatebarpos(m);
+    arrange();
+}
+
+void
 fn_setmwfact(const char *arg)
 {
     double delta;
 
     Monitor *m = &monitors[monitorat()];
 
-    if (!domwfact)
-        return;
     /*
      * arg handling, manipulate mwfact 
      */
@@ -1390,9 +1415,7 @@ configurerequest(XEvent * e)
         if (ev->value_mask & CWBorderWidth)
             c->c_border = ev->border_width;
 
-        if (c->c_isfixed || c->c_isfloating
-            || (floating == m->m_layout->arrange))
-        {
+        if (c->c_isfixed || c->c_isfloating) {
             if (ev->value_mask & CWX)
                 c->x = m->m_xorig + ev->x;
             if (ev->value_mask & CWY)
@@ -1839,11 +1862,9 @@ movemouse(Client * c)
             else if (abs((m->way + m->wah) - (ny + c->h + 2 * c->c_border)) <
                      SNAP)
                 ny = m->way + m->wah - c->h - 2 * c->c_border;
-            if ((monitors[selmonitor].m_layout->arrange != floating)
-                && (abs(nx - c->x) > SNAP || abs(ny - c->y) > SNAP))
+            if ((abs(nx - c->x) > SNAP) || (abs(ny - c->y) > SNAP))
                 togglefloating(NULL);
-            if ((monitors[selmonitor].m_layout->arrange == floating)
-                || c->c_isfloating)
+            if (c->c_isfloating)
                 resize(c, nx, ny, c->w, c->h, False);
             /*
              * memcpy(c->tags, monitors[monitorat()].seltags, sizeof
@@ -1892,11 +1913,9 @@ resizemouse(Client * c)
                 nw = 1;
             if ((nh = ev.xmotion.y - ocy - 2 * c->c_border + 1) <= 0)
                 nh = 1;
-            if ((monitors[selmonitor].m_layout->arrange != floating)
-                && (abs(nw - c->w) > SNAP || abs(nh - c->h) > SNAP))
+            if (abs(nw - c->w) > SNAP || abs(nh - c->h) > SNAP)
                 togglefloating(NULL);
-            if ((monitors[selmonitor].m_layout->arrange == floating)
-                || c->c_isfloating)
+            if (c->c_isfloating)
                 resize(c, c->x, c->y, nw, nh, True);
             break;
         }

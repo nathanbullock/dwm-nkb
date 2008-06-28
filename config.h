@@ -22,9 +22,8 @@ const char tags[][MAXTAGLEN] = {
 
 Layout layouts[] = {
 	/* symbol		function */
-	{ "[]=",		tile }, /* first entry is default */
-	{ "[X]",		fullscreen }, /* first entry is default */
-	//{ "><>",		floating },
+	{ "[]=",		layoutTile },
+	{ "[X]",		layoutFullscreen },
 };
 
 Key KeysPrimary[] = {
@@ -34,7 +33,7 @@ Key KeysPrimary[] = {
     
     { Mod1Mask,	          XK_h,      fn_viewPrevWorkspace, NULL },
     { Mod1Mask,	          XK_j,      fn_focusNext,         NULL },
-    { Mod1Mask,	          XK_k,      fn_nextLayout, NULL },
+    { Mod1Mask,	          XK_k,      fn_nextLayout,        NULL },
     { Mod1Mask,	          XK_l,      fn_viewNextWorkspace, NULL },
 };
 
@@ -66,6 +65,10 @@ Key KeysSecondary[] = {
     { Mod1Mask,			XK_l,		fn_setmwfact,	"+0.01" },
     { Mod1Mask|ShiftMask,	XK_c,		fn_killWindow,	NULL },
     { Mod1Mask|ShiftMask,	XK_q,		fn_killSession,	NULL },
+    { Mod1Mask,			XK_a,		fn_adjustMonitorWidth,	"-5" },
+    { Mod1Mask,			XK_f,		fn_adjustMonitorWidth,	"+5" },
+    { Mod1Mask,			XK_s,		fn_adjustMonitorHeight,	"-5" },
+    { Mod1Mask,			XK_d,		fn_adjustMonitorHeight,	"+5" },
 };
 
 
