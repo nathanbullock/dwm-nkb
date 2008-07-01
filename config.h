@@ -16,7 +16,7 @@ const char tags[][MAXTAGLEN] = {
     "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 
 /* layout(s) */
-#define VSPLIT			400
+#define VSPLIT			488
 #define RESIZEHINTS		True	/* False - respect size hints in tiled resizals */
 #define SNAP			32	/* snap pixel */
 
@@ -28,7 +28,7 @@ Layout layouts[] = {
 
 Key KeysPrimary[] = {
     /* modifier	          key	     function	           argument */
-    { Mod1Mask|ShiftMask, XK_Return, fn_exec,              "exec uxterm +sb" },
+    { Mod1Mask|ShiftMask, XK_Return, fn_exec,              "exec xterm" },
     { Mod1Mask,	          XK_q,      fn_secondaryKeys,     NULL },
     
     { Mod1Mask,	          XK_h,      fn_viewPrevWorkspace, NULL },

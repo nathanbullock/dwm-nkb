@@ -123,6 +123,7 @@ typedef struct Workspaces {
     int         w_numClients[10];
     Client      w_client;
     int         w_vSplit[10];
+    Layout     *w_layout[10];
 } Workspaces;
 
 Workspaces workspaces;
@@ -138,9 +139,6 @@ struct Monitor {
     int         wax, way, wah, waw;
     DC          dc;
     int         m_workspace;
-
-    /* these should probably belong to a workspace */
-    Layout     *m_layout;
 };
 
 /*
@@ -563,7 +561,7 @@ arrange(void)
             ban(c);
     }
 
-    monitors[selmonitor].m_layout->arrange();
+    workspaces.w_layout[monitors[selmonitor].m_workspace]->arrange();
     focus(NULL);
     restack();
 }
@@ -813,7 +811,7 @@ drawbar(void)
             m->dc.x += m->dc.w;
         }
         m->dc.w = blw;
-        drawtext(m, m->m_layout->symbol, m->dc.norm, False);
+        drawtext(m, workspaces.w_layout[m->m_workspace]->symbol, m->dc.norm, False);
         x = m->dc.x + m->dc.w;
         if (i == selmonitor) {
             m->dc.w = textw(m, stext);
@@ -1222,16 +1220,16 @@ fn_nextLayout(const char *arg)
 
     TRACE("%s\n", __func__);
     if (!arg) {
-        m->m_layout++;
-        if (m->m_layout == &layouts[LENGTH(layouts)])
-            m->m_layout = &layouts[0];
+        workspaces.w_layout[m->m_workspace]++;
+        if (workspaces.w_layout[m->m_workspace] == &layouts[LENGTH(layouts)])
+            workspaces.w_layout[m->m_workspace] = &layouts[0];
     } else {
         for (i = 0; i < LENGTH(layouts); i++)
             if (!strcmp(arg, layouts[i].symbol))
                 break;
         if (i == LENGTH(layouts))
             return;
-        m->m_layout = &layouts[i];
+        workspaces.w_layout[m->m_workspace] = &layouts[i];
     }
     arrange();
     drawbar();
@@ -2059,8 +2057,9 @@ setup(void)
         workspaces.w_client.c_next[i] = rootClient;
         workspaces.w_client.c_prev[i] = rootClient;
         workspaces.w_vSplit[i] = VSPLIT;
+        workspaces.w_layout[i] = &layouts[0];
     }
-
+        
     // init screens/monitors first
     mcount = 1;
     if ((isxinerama = XineramaIsActive(dpy))) {
@@ -2111,7 +2110,6 @@ setup(void)
         /*
          * init layouts 
          */
-        m->m_layout = &layouts[0];
         for (blw = k = 0; k < LENGTH(layouts); k++) {
             j = textw(m, layouts[k].symbol);
             if (j > blw)
